@@ -1,27 +1,19 @@
-<!DOCTYPE html>
-<html lang="fa">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بازی آموزشی ضرب عدد در بردار</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <h1 class="title">بازی آموزشی ضرب عدد در بردار</h1>
-    <div class="container">
-        <label>مولفه X:</label>
-        <input id="x" type="number" value="2">
-        <label>مولفه Y:</label>
-        <input id="y" type="number" value="3">
-        <label>عدد ضریب:</label>
-        <input id="k" type="number" value="2">
-        <button onclick="drawVector()">محاسبه و نمایش</button>
-    </div>
+<h1 class="title">بازی آموزشی ضرب عدد در بردار</h1>
+<canvas id="vectorCanvas"></canvas>
 
-    <canvas id="vectorCanvas"></canvas>
-    <div id="result"></div>
-    <p class="hint">مختصات را وارد کنید و دکمه محاسبه را بزنید</p>
+<p class="hint">مختصات بردار را وارد کن، ضریب را تعیین کن و ببین بردار چگونه تغییر می‌کند.</p>
 
-    <script src="script.js"></script>
-</body>
-</html>
+<div class="container">
+    <label>مولفه X:</label>
+    <input id="x" type="number" value="2">
+    <label>مولفه Y:</label>
+    <input id="y" type="number" value="3">
+    <label>عدد ضریب:</label>
+    <input id="k" type="number" value="2">
+    <button onclick="drawVector()">محاسبه و نمایش</button>
+</div>
+
+<div id="result"></div>
+
+
+
