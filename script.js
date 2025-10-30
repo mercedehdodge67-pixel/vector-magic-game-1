@@ -36,12 +36,8 @@ function drawAxes() {
     ctx.stroke();
 }
 
-function drawVector() {
+function drawVectorAnimated(x, y, k) {
     drawAxes();
-    const x = parseFloat(document.getElementById("x").value);
-    const y = parseFloat(document.getElementById("y").value);
-    const k = parseFloat(document.getElementById("k").value);
-
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
     const scale = 40;
@@ -51,40 +47,70 @@ function drawVector() {
     const x2 = cx + (x * k) * scale;
     const y2 = cy - (y * k) * scale;
 
-    // بردار اصلی
+    // بردار اصلی (سبز)
     ctx.strokeStyle = "#10b981";
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(x1, y1);
     ctx.stroke();
-
-    // فلش بردار اصلی
     drawArrowHead(x1, y1, Math.atan2(y1 - cy, x1 - cx), "#10b981");
 
-    // بردار ضرب‌شده
-    ctx.strokeStyle = "#ef4444";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-    drawArrowHead(x2, y2, Math.atan2(y2 - cy, x2 - cx), "#ef4444");
+    // انیمیشن برای بردار قرمز
+    let progress = 0;
+    const steps = 40;
 
-    // نمایش نتیجه
+    function animate() {
+        drawAxes();
+        // باز رسم بردار اصلی
+        ctx.strokeStyle = "#10b981";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+        drawArrowHead(x1, y1, Math.atan2(y1 - cy, x1 - cx), "#10b981");
+
+        const xt = cx + (x * k * scale * progress);
+        const yt = cy - (y * k * scale * progress);
+
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(xt, yt);
+        ctx.stroke();
+
+        if (progress < 1) {
+            progress += 0.03;
+            requestAnimationFrame(animate);
+        } else {
+            drawArrowHead(x2, y2, Math.atan2(y2 - cy, x2 - cx), "#ef4444");
+        }
+    }
+
+    animate();
+
     document.getElementById("result").textContent =
-        `بردار $A = (${(x).toFixed(1)}, ${(y).toFixed(1)})`;
         `بردار ${k}A = (${(x * k).toFixed(1)}, ${(y * k).toFixed(1)})`;
+    document.getElementById("result").style.display = "block";
 }
 
 function drawArrowHead(x, y, angle, color) {
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.lineTo(x - 10 * Math.cos(angle - Math.PI / 6), y - 10 * Math.sin(angle - Math.PI / 6));
-    ctx.lineTo(x - 10 * Math.cos(angle + Math.PI / 6), y - 10 * Math.sin(angle + Math.PI / 6));
+    ctx.lineTo(x - 14 * Math.cos(angle - Math.PI / 6), y - 14 * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(x - 14 * Math.cos(angle + Math.PI / 6), y - 14 * Math.sin(angle + Math.PI / 6));
     ctx.closePath();
     ctx.fill();
+}
+
+function drawVector() {
+    const x = parseFloat(document.getElementById("x").value);
+    const y = parseFloat(document.getElementById("y").value);
+    const k = parseFloat(document.getElementById("k").value);
+    drawVectorAnimated(x, y, k);
 }
 
 drawAxes();
