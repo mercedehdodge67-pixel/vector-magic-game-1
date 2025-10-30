@@ -107,10 +107,46 @@ function drawArrowHead(x, y, angle, color) {
 }
 
 function drawVector() {
+    drawAxes();
     const x = parseFloat(document.getElementById("x").value);
     const y = parseFloat(document.getElementById("y").value);
     const k = parseFloat(document.getElementById("k").value);
-    drawVectorAnimated(x, y, k);
+
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+
+    // ✅ مقیاس خودکار بر اساس بزرگ‌ترین مؤلفه
+    const maxVal = Math.max(Math.abs(x * k), Math.abs(y * k), Math.abs(x), Math.abs(y));
+    const scale = Math.min(canvas.width, canvas.height) / (maxVal * 3);
+
+    const x1 = cx + x * scale;
+    const y1 = cy - y * scale;
+    const x2 = cx + (x * k) * scale;
+    const y2 = cy - (y * k) * scale;
+
+    // بردار اصلی
+    ctx.strokeStyle = "#10b981";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+    drawArrowHead(x1, y1, Math.atan2(y1 - cy, x1 - cx), "#10b981");
+
+    // بردار ضرب‌شده
+    ctx.strokeStyle = "#ef4444";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    drawArrowHead(x2, y2, Math.atan2(y2 - cy, x2 - cx), "#ef4444");
+
+    // نمایش نتیجه
+    document.getElementById("result").textContent =
+        `بردار ${k}A = (${(x * k).toFixed(1)}, ${(y * k).toFixed(1)})`;
+    document.getElementById("result").style.display = "block";
 }
+
 
 drawAxes();
