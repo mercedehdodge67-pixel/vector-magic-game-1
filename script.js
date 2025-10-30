@@ -44,25 +44,28 @@ function drawVector() {
 
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
-    const scale = 40;
 
+    // ✅ محاسبه حداکثر فاصله و تنظیم مقیاس خودکار واقعی
+    const maxComponent = Math.max(Math.abs(x), Math.abs(y), Math.abs(x * k), Math.abs(y * k));
+    const margin = 0.9; // مقدار حاشیه (نسبی)
+    const scale = (Math.min(canvas.width, canvas.height) / 2) * margin / (maxComponent || 1);
+
+    // مختصات بردارها بر اساس مقیاس
     const x1 = cx + x * scale;
     const y1 = cy - y * scale;
     const x2 = cx + (x * k) * scale;
     const y2 = cy - (y * k) * scale;
 
-    // بردار اصلی
+    // 🎨 رسم بردار اصلی
     ctx.strokeStyle = "#10b981";
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(x1, y1);
     ctx.stroke();
-
-    // فلش بردار اصلی
     drawArrowHead(x1, y1, Math.atan2(y1 - cy, x1 - cx), "#10b981");
 
-    // بردار ضرب‌شده
+    // 🔴 رسم بردار ضرب‌شده
     ctx.strokeStyle = "#ef4444";
     ctx.lineWidth = 4;
     ctx.beginPath();
@@ -71,10 +74,12 @@ function drawVector() {
     ctx.stroke();
     drawArrowHead(x2, y2, Math.atan2(y2 - cy, x2 - cx), "#ef4444");
 
-    // نمایش نتیجه
+    // 🧮 نمایش نتیجه
     document.getElementById("result").textContent =
         `بردار ${k}A = (${(x * k).toFixed(1)}, ${(y * k).toFixed(1)})`;
+    document.getElementById("result").style.display = "block";
 }
+
 
 function drawArrowHead(x, y, angle, color) {
     ctx.fillStyle = color;
