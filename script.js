@@ -53,7 +53,7 @@ function drawVector() {
 
     // بردار اصلی
     ctx.strokeStyle = "#10b981";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(x1, y1);
