@@ -74,6 +74,7 @@ function drawVector() {
     // نمایش نتیجه
     document.getElementById("result").textContent =
         `بردار ${k}A = (${(x * k).toFixed(1)}, ${(y * k).toFixed(1)})`;
+    document.getElementById("result").style.display = "block";
 }
 
 function drawArrowHead(x, y, angle, color) {
