@@ -63,12 +63,12 @@ function calculateAutoScale(x, y, k) {
         Math.abs(y * k)
     ];
     const maxUnits = Math.max(...absVals, 1); // اگر همه صفر بودند، از 1 استفاده کن
-    const margin = 0.85; // درصد استفاده از نصف کوچک‌ترین بعد بوم
+    const margin = 0.95; // درصد استفاده از نصف کوچک‌ترین بعد بوم
     const maxCanvasHalf = Math.min(canvas.width, canvas.height) / 2;
     let unitPixels = (maxCanvasHalf * margin) / maxUnits;
 
     // محدودیت‌ها برای خوانایی
-    const MIN_PIXELS = 8;
+    const MIN_PIXELS = 4;
     const MAX_PIXELS = 120;
     unitPixels = Math.max(MIN_PIXELS, Math.min(MAX_PIXELS, unitPixels));
 
