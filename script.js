@@ -28,7 +28,7 @@ function calculateUnitForGrid(x = 0, y = 0, k = 1) {
     const maxCanvasHalf = Math.min(canvas.width, canvas.height) / 2;
     const margin = 0.9;
 
-    // مقیاس پایه بر اساس اندازه بردارها
+    // هر نیم‌صفحه باید 50 واحد را نمایش دهد → کل محور ±50
     let unitPixels = (maxCanvasHalf * margin) / maxAbs;
 
     // محدودیت خوانایی
@@ -36,7 +36,7 @@ function calculateUnitForGrid(x = 0, y = 0, k = 1) {
     const MAX_PIXELS = 120;
     unitPixels = Math.max(MIN_PIXELS, Math.min(MAX_PIXELS, unitPixels));
 
-    // اگر برای جا دادن بردار نیاز به بیش از ±50 واحد باشد، محدود کن
+    // اگر نیاز به بیش از ±50 باشد، حداکثر را محدود کن
     const shownUnits = (maxCanvasHalf * margin) / unitPixels;
     if (shownUnits > 50) {
         unitPixels = (maxCanvasHalf * margin) / 50;
@@ -52,9 +52,7 @@ function drawAxesOnly(unitPixels) {
     const cx = Math.round(canvas.width / 2);
     const cy = Math.round(canvas.height / 2);
 
-    const maxUnitsX = Math.floor((canvas.width / 2) / unitPixels);
-    const maxUnitsY = Math.floor((canvas.height / 2) / unitPixels);
-    const halfUnits = Math.min(50, Math.max(maxUnitsX, maxUnitsY));
+    const halfUnits = 50;
 
     ctx.strokeStyle = "rgba(180, 200, 255, 0.35)";
     ctx.lineWidth = 1;
@@ -92,25 +90,26 @@ function drawAxesOnly(unitPixels) {
 
 // -------------------- محدود کردن نوک بردار --------------------
 function clampToGrid(px, py, cx, cy, unitPixels) {
-    const maxOffset = 50 * unitPixels;
+    const maxOffset = 50 * unitPixels; // ±50 واحد واقعی
     const dx = px - cx;
     const dy = py - cy;
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     if (distance <= maxOffset) {
-        return { x: px, y: py, clipped: false };
+        return { x: px, y: py, clipped: false, angle: Math.atan2(dy, dx) };
     } else {
         const scale = maxOffset / distance;
         return {
             x: cx + dx * scale,
             y: cy + dy * scale,
-            clipped: true
+            clipped: true,
+            angle: Math.atan2(dy, dx)
         };
     }
 }
 
 // -------------------- انیمیشن رسم بردار --------------------
-function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, unitPixels, onComplete, showArrowBeyond) {
+function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, unitPixels, onComplete, showArrowBeyond, clipAngle) {
     const startImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
     let frameIndex = 0;
     const totalFrames = 50;
@@ -145,7 +144,7 @@ function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, unitPixels, onCompl
             drawArrowHead(xEnd, yEnd, Math.atan2(yEnd - cy, xEnd - cx), color, unitPixels, lineWidth);
 
             if (showArrowBeyond) {
-                drawBoundaryIndicator(xEnd, yEnd);
+                drawBoundaryArrow(xEnd, yEnd, clipAngle);
             }
 
             if (onComplete) onComplete();
@@ -167,22 +166,19 @@ function drawArrowHead(x, y, angle, color, unitPixels, thickness) {
     ctx.fill();
 }
 
-// -------------------- دایره هشدار مرزی --------------------
-function drawBoundaryIndicator(x, y) {
+// -------------------- فلش خاکستری هشدار در مرز --------------------
+function drawBoundaryArrow(x, y, angle) {
+    const size = 14;
     ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillStyle = "rgba(120,120,120,0.7)";
     ctx.beginPath();
-    ctx.strokeStyle = "rgba(100,100,100,0.6)";
-    ctx.lineWidth = 3;
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(x - 4, y);
-    ctx.lineTo(x + 4, y);
-    ctx.moveTo(x, y - 4);
-    ctx.lineTo(x, y + 4);
-    ctx.stroke();
-
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-size * Math.cos(-Math.PI / 6), -size * Math.sin(-Math.PI / 6));
+    ctx.lineTo(-size * Math.cos(Math.PI / 6), -size * Math.sin(Math.PI / 6));
+    ctx.closePath();
+    ctx.fill();
     ctx.restore();
 }
 
@@ -211,19 +207,29 @@ function drawVector() {
     const end1 = clampToGrid(x1, y1, cx, cy, unitPixels);
     const end2 = clampToGrid(x2, y2, cx, cy, unitPixels);
 
-    animateVector(cx, cy, end1.x, end1.y, "#10b981", Math.max(2, Math.round(unitPixels * 0.08)), unitPixels, () => {
-        setTimeout(() => {
-            animateVector(
-                cx, cy,
-                end2.x, end2.y,
-                "#ef4444",
-                Math.max(2, Math.round(unitPixels * 0.1)),
-                unitPixels,
-                null,
-                end2.clipped
-            );
-        }, 180);
-    });
+    animateVector(
+        cx, cy,
+        end1.x, end1.y,
+        "#10b981",
+        Math.max(2, Math.round(unitPixels * 0.08)),
+        unitPixels,
+        () => {
+            setTimeout(() => {
+                animateVector(
+                    cx, cy,
+                    end2.x, end2.y,
+                    "#ef4444",
+                    Math.max(2, Math.round(unitPixels * 0.1)),
+                    unitPixels,
+                    null,
+                    end2.clipped,
+                    end2.angle
+                );
+            }, 180);
+        },
+        end1.clipped,
+        end1.angle
+    );
 
     document.getElementById("result").textContent =
         `بردار ${k}A = (${(x * k).toFixed(2)}, ${(y * k).toFixed(2)})`;
