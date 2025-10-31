@@ -1,67 +1,61 @@
-// === ÊäÙíãÇÊ Çæáíå ===
+// === ØªÙ†Ø¸ÛŒÙ…Ø§Øª Ø§ÙˆÙ„ÛŒÙ‡ ===
 const canvas = document.getElementById("vectorCanvas");
 const ctx = canvas.getContext("2d");
+
 let cx, cy, unitPixels;
 let currentVector = null;
-let isMobile = /Mobi|Android/i.test(navigator.userAgent);
 
-// íÇã ãÎÕæÕ ãæÈÇíá
-if (isMobile) {
-  const note = document.createElement("div");
-  note.style.textAlign = "center";
-  note.style.color = "#b30000";
-  note.style.fontSize = "16px";
-  note.style.fontWeight = "bold";
-  note.style.marginBottom = "8px";
-  note.innerText =
-    "˜ÇÑÈÑ ÑÇãí¡ ÇÑ ãÔÛæá ÇäÌÇã Çíä ÈÇÒí ÈÇ æÔí ãæÈÇíá åÓÊíÏ¡ ÇÒ ãÑÈÚåÇí ŞÑãÒ Ñä ÈÑÇí æÇÑÏ ˜ÑÏä ÚáÇãÊ ãäİí ÚÏÏ ÇÓÊİÇÏå ˜äíÏ.";
-  document.body.prepend(note);
-}
-
-// === ÊäÙíã ÇäÏÇÒå Èæã ÈåÕæÑÊ ãÑÈÚí ===
+// ØªÙ†Ø¸ÛŒÙ… Ø¨ÙˆÙ… Ø¨Ù‡ Ø´Ú©Ù„ Ù…Ø±Ø¨Ø¹ Ùˆ Ø±Ø³Ù… Ù…Ø¬Ø¯Ø¯
 function resizeCanvas() {
+  // Ø§Ù†Ø¯Ø§Ø²Ù‡ Ø¨ÙˆÙ… Ù…Ø±Ø¨Ø¹ Ø´ÙˆØ¯ (Ø¨Ø± Ø§Ø³Ø§Ø³ Ú©ÙˆÚ†Ú©â€ŒØªØ±Ù Ø¹Ø±Ø¶ ÛŒØ§ Ø§Ø±ØªÙØ§Ø¹ ØµÙØ­Ù‡)
   const size = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9);
   canvas.width = size;
   canvas.height = size;
+
   cx = canvas.width / 2;
   cy = canvas.height / 2;
   unitPixels = calculateAutoScale();
+
   drawCoordinateSystem();
 }
 
-// === ãŞíÇÓ ÎæÏ˜ÇÑ ÈÑÇí ±?? ===
+// ØªÙ†Ø¸ÛŒÙ… Ù…Ù‚ÛŒØ§Ø³ Ù…Ø­ÙˆØ± Ø¨Ø±Ø§ÛŒ Ù…Ø­Ø¯ÙˆØ¯Ù‡ Â±ÛµÛ°
 function calculateAutoScale() {
   const maxCanvasHalf = canvas.width / 2;
-  const targetMaxUnits = 50;
-  const margin = 0.9;
+  const targetMaxUnits = 50; // Ù…Ø­ÙˆØ± Ø§Ø² -50 ØªØ§ +50
+  const margin = 0.9; // Ú©Ù…ÛŒ ÙØ§ØµÙ„Ù‡ Ø§Ø² Ù„Ø¨Ù‡â€ŒÙ‡Ø§ Ø¨Ø±Ø§ÛŒ Ø²ÛŒØ¨Ø§ÛŒÛŒ
   let unit = (maxCanvasHalf * margin) / targetMaxUnits;
 
+  // Ù…Ø­Ø¯ÙˆØ¯ Ú©Ø±Ø¯Ù† Ø§Ù†Ø¯Ø§Ø²Ù‡ Ù¾ÛŒÚ©Ø³Ù„ Ù‡Ø± ÙˆØ§Ø­Ø¯ Ø¨Ø±Ø§ÛŒ Ø¬Ù„ÙˆÚ¯ÛŒØ±ÛŒ Ø§Ø² Ø´Ù„ÙˆØºÛŒ Ø²ÛŒØ§Ø¯
   const MIN_PIXELS = 4;
   const MAX_PIXELS = 120;
   unit = Math.max(MIN_PIXELS, Math.min(MAX_PIXELS, unit));
   unit = Math.round(unit);
+
   return unit;
 }
 
-// === ÑÓã ãÍæÑåÇí ãÎÊÕÇÊ ===
+// Ø±Ø³Ù… Ù…Ø­ÙˆØ±Ù‡Ø§ÛŒ Ù…Ø®ØªØµØ§Øª
 function drawCoordinateSystem() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Ù…Ø­ÙˆØ± X Ùˆ Y
   ctx.lineWidth = 1.5;
   ctx.strokeStyle = "black";
 
-  // ãÍæÑ x
+  // Ù…Ø­ÙˆØ± x
   ctx.beginPath();
   ctx.moveTo(0, cy);
   ctx.lineTo(canvas.width, cy);
   ctx.stroke();
 
-  // ãÍæÑ y
+  // Ù…Ø­ÙˆØ± y
   ctx.beginPath();
   ctx.moveTo(cx, 0);
   ctx.lineTo(cx, canvas.height);
   ctx.stroke();
 
-  // ÊŞÓíãÈäÏíåÇ
+  // ØªÙ‚Ø³ÛŒÙ…â€ŒØ¨Ù†Ø¯ÛŒâ€ŒÙ‡Ø§ (Ù‡Ø± 10 ÙˆØ§Ø­Ø¯)
   ctx.font = "12px Arial";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
@@ -70,14 +64,14 @@ function drawCoordinateSystem() {
     const x = cx + i * unitPixels;
     const y = cy - i * unitPixels;
 
-    // ãÍæÑ x
+    // Ù…Ø­ÙˆØ± X
     ctx.beginPath();
     ctx.moveTo(x, cy - 4);
     ctx.lineTo(x, cy + 4);
     ctx.stroke();
     if (i !== 0) ctx.fillText(i.toString(), x, cy + 6);
 
-    // ãÍæÑ y
+    // Ù…Ø­ÙˆØ± Y
     ctx.beginPath();
     ctx.moveTo(cx - 4, y);
     ctx.lineTo(cx + 4, y);
@@ -91,11 +85,11 @@ function drawCoordinateSystem() {
     }
   }
 
-  // ÑÓã ÈÑÏÇÑ İÚáí (ÏÑ ÕæÑÊ æÌæÏ)
+  // Ø±Ø³Ù… Ø¨Ø±Ø¯Ø§Ø± ÙØ¹Ù„ÛŒ (Ø§Ú¯Ø± ÙˆØ¬ÙˆØ¯ Ø¯Ø§Ø´ØªÙ‡ Ø¨Ø§Ø´Ø¯)
   if (currentVector) drawVector(currentVector.x, currentVector.y, "red", 3);
 }
 
-// === ÑÓã ÈÑÏÇÑ ===
+// Ø±Ø³Ù… Ø¨Ø±Ø¯Ø§Ø±
 function drawVector(x, y, color = "red", lineWidth = 3) {
   ctx.save();
   ctx.strokeStyle = color;
@@ -110,7 +104,7 @@ function drawVector(x, y, color = "red", lineWidth = 3) {
   ctx.lineTo(endX, endY);
   ctx.stroke();
 
-  // í˜Çä ÇäÊåÇíí
+  // ÙÙ„Ø´ Ø§Ù†ØªÙ‡Ø§ÛŒÛŒ
   const angle = Math.atan2(cy - endY, endX - cx);
   const arrowLength = 10;
   ctx.beginPath();
@@ -129,14 +123,15 @@ function drawVector(x, y, color = "red", lineWidth = 3) {
   ctx.restore();
 }
 
-// === äãæäå ÇÓÊİÇÏå ===
+// ØªØ§Ø¨Ø¹ Ø¹Ù…ÙˆÙ…ÛŒ Ø¨Ø±Ø§ÛŒ ØªÙ†Ø¸ÛŒÙ… Ø¨Ø±Ø¯Ø§Ø±
 function setVector(x, y) {
   currentVector = { x, y };
   drawCoordinateSystem();
 }
 
+// Ø±ÙˆÛŒØ¯Ø§Ø¯ ØªØºÛŒÛŒØ± Ø§Ù†Ø¯Ø§Ø²Ù‡ ØµÙØ­Ù‡
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-// äãæäå Çæáíå ÈÑÇí ÂÒãÇíÔ:
+// ØªØ³Øª Ø§ÙˆÙ„ÛŒÙ‡
 setVector(20, 30);
