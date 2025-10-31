@@ -177,7 +177,7 @@ function drawVector() {
 
     // نمایش نتایج عددی (مختصات بردار ضرب‌شده)
     document.getElementById("result").textContent =
-        `بردار ${k}A = (${(x * k).toFixed(2)}, ${(y * k).toFixed(2)}) — واحد = ${unitPixels}px`;
+        `بردار ${k}A = (${(x * k).toFixed(2)}, ${(y * k).toFixed(2)})`;
 }
 
 // رسم اولیه‌ی محورها با unit پیش‌فرض
