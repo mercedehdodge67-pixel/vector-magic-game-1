@@ -1,6 +1,7 @@
 const canvas = document.getElementById("vectorCanvas");
 const ctx = canvas.getContext("2d");
 
+// -------------------- تنظیم اندازه‌ی مربعی canvas --------------------
 function resizeCanvas() {
     const maxWidth = window.innerWidth * 0.9;
     const maxHeight = window.innerHeight * 0.6;
@@ -16,35 +17,42 @@ window.addEventListener('resize', () => {
 
 let cachedAxesImage = null;
 
-// -------------------- محاسبه مقیاس --------------------
+// -------------------- محاسبه مقیاس (نسخه نهایی برای ±50) --------------------
 function calculateUnitForGrid(x = 0, y = 0, k = 1) {
+    // بزرگ‌ترین مختصات مورد نیاز (از هر دو بردار: اصلی و ضرب‌شده)
     const candidates = [Math.abs(x), Math.abs(y), Math.abs(x * k), Math.abs(y * k)];
     const maxAbs = Math.max(...candidates, 1);
 
+    // نصف بوم (در پیکسل)
     const halfCanvas = Math.min(canvas.width, canvas.height) / 2;
-    const margin = 0.9; // فاصله از لبه
+
+    // ✅ استفاده کامل از نیمه‌ی بوم برای نمایش دقیق ±50 واحد
+    // اگر بخواهی کمی فاصله از لبه داشته باشی، مقدار را مثلاً 0.96 بگذار.
+    const margin = 1;
+
+    // ناحیه‌ی قابل‌استفاده‌ی نصف بوم (بر حسب پیکسل)
     const halfCanvasUsable = halfCanvas * margin;
 
-    // هر نیم‌صفحه حداکثر 50 واحد را پوشش می‌دهد → unitPixels برای 50
+    // هر نیمه‌ی بوم حداکثر ۵۰ واحد را نمایش می‌دهد
     const unitForMax = halfCanvasUsable / 50;
 
-    // اما اگر بردار کوچک‌تر است، بزرگ‌تر نمایش بده تا واضح‌تر شود
+    // اگر بردار کوچک‌تر است، واحد پیکسلی بزرگ‌تر شود تا واضح‌تر دیده شود
     const unitForVector = halfCanvasUsable / maxAbs;
 
-    // از بین این دو، واحد پیکسلی واقعی را انتخاب کن (اما بیشتر از 50 واحد در نیمه نرود)
+    // از بین دو مقدار، واحدی را انتخاب کن که هم بردار جا شود و هم از ±50 تجاوز نکند
     const unitPixels = Math.max(unitForMax, unitForVector);
 
     return unitPixels;
 }
 
-// -------------------- رسم شبکه --------------------
+// -------------------- رسم شبکه و محورها --------------------
 function drawAxesOnly(unitPixels) {
     if (!unitPixels) unitPixels = calculateUnitForGrid();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
 
-    const halfUnits = 50;
+    const halfUnits = 50; // هر محور از -50 تا +50
 
     ctx.strokeStyle = "rgba(180, 200, 255, 0.35)";
     ctx.lineWidth = 1;
@@ -82,7 +90,7 @@ function drawAxesOnly(unitPixels) {
 
 // -------------------- محدود کردن نوک بردار --------------------
 function clampToGrid(px, py, cx, cy, unitPixels) {
-    const maxOffset = 50 * unitPixels; // ±50 واحد
+    const maxOffset = 50 * unitPixels; // ±50 واحد واقعی
     const dx = px - cx;
     const dy = py - cy;
     const distance = Math.sqrt(dx * dx + dy * dy);
