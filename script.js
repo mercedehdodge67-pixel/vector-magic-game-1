@@ -17,31 +17,47 @@ window.addEventListener('resize', () => {
 
 let cachedAxesImage = null;
 
-// -------------------- محاسبه مقیاس --------------------
+// -------------------- محاسبه مقیاس (اصلاح‌شده) --------------------
 function calculateUnitForGrid(x = 0, y = 0, k = 1) {
+    // بزرگ‌ترین مختصات (هر دو بردار: اصلی و ضرب‌شده)
     const candidates = [
         Math.abs(x), Math.abs(y),
         Math.abs(x * k), Math.abs(y * k)
     ];
-    const maxAbs = Math.max(...candidates, 1);
+    const maxAbsNeeded = Math.max(...candidates, 1);
 
-    const halfCanvas = Math.min(canvas.width, canvas.height) / 2;
-    const margin = 0.9; // کمی فاصله از لبه‌ها برای دید بهتر
+    // نیمهٔ قابل استفادهٔ بوم (بر حسب پیکسل) — margin برای فاصله از لبه
+    const halfCanvasUsable = Math.floor((Math.min(canvas.width, canvas.height) / 2) * 0.9);
 
-    // نیمه‌ی بوم باید کل محدوده‌ی maxAbs را پوشش دهد (±maxAbs)
-    let unitPixels = (halfCanvas * margin) / maxAbs;
+    // حداقل/حداکثر پیکسل برای هر واحد (خوانایی)
+    const MIN_PIXELS = 6;
+    const MAX_PIXELS = 200;
 
-    // محدودیت خوانایی
-    const MIN_PIXELS = 8;
-    const MAX_PIXELS = 120;
-    unitPixels = Math.max(MIN_PIXELS, Math.min(MAX_PIXELS, unitPixels));
+    // حالت 1: اگر maxAbsNeeded خیلی کوچک است، می‌خواهیم واحد بزرگ باشد تا تصویر خواناتر باشد.
+    // اما واحد را طوری انتخاب می‌کنیم که حتماً maxAbsNeeded * unitPixels <= halfCanvasUsable
+    let unitPixels = Math.floor(halfCanvasUsable / maxAbsNeeded);
 
-    // اگر لازم است بیش از ±50 واحد نمایش داده شود، محدودش کن
-    const shownUnits = (halfCanvas * margin) / unitPixels;
-    if (shownUnits > 50) {
-        unitPixels = (halfCanvas * margin) / 50;
+    // اگر unitPixels به زیر حداقل رفت، آن را به MIN_PIXELS محدود کن (ممکن است در ادامه بخواهیم نشان‌دهی را محدود کنیم)
+    if (unitPixels < MIN_PIXELS) unitPixels = MIN_PIXELS;
+
+    // اگر unitPixels خیلی بزرگ شد، آن را محدود کن
+    if (unitPixels > MAX_PIXELS) unitPixels = MAX_PIXELS;
+
+    // حالا بررسی می‌کنیم که با unitPixels فعلی، نیمهٔ بوم چند واحد نشان می‌دهد
+    let shownUnitsPerHalf = Math.floor(halfCanvasUsable / unitPixels);
+
+    // اگر نشان‌دهی بیش از 50 واحد در نیمهٔ بوم می‌شود (یعنی کل محور > 100 واحد)، باید unitPixels را بزرگتر کنیم
+    if (shownUnitsPerHalf > 50) {
+        unitPixels = Math.floor(halfCanvasUsable / 50);
+        // دوباره محدودیت خوانایی اعمال کن
+        if (unitPixels < MIN_PIXELS) unitPixels = MIN_PIXELS;
+        if (unitPixels > MAX_PIXELS) unitPixels = MAX_PIXELS;
+        shownUnitsPerHalf = Math.floor(halfCanvasUsable / unitPixels);
     }
 
+    // نتیجه: unitPixels طوری انتخاب شده که
+    // - حداکثرِ لازم برای جا دادن بردارها را برآورده کند
+    // - و هر نیمهٔ بوم حداکثر 50 واحد نمایش دهد (یعنی کل محور ±50)
     return Math.round(unitPixels);
 }
 
@@ -52,7 +68,7 @@ function drawAxesOnly(unitPixels) {
     const cx = Math.round(canvas.width / 2);
     const cy = Math.round(canvas.height / 2);
 
-    const halfUnits = 50; // حالا هر محور از −50 تا +50
+    const halfUnits = 50; // هر محور از -50 تا +50 (هر نیمه 50 واحد)
 
     ctx.strokeStyle = "rgba(180, 200, 255, 0.35)";
     ctx.lineWidth = 1;
@@ -90,7 +106,7 @@ function drawAxesOnly(unitPixels) {
 
 // -------------------- محدود کردن نوک بردار --------------------
 function clampToGrid(px, py, cx, cy, unitPixels) {
-    const maxOffset = 50 * unitPixels; // ±50 واحد
+    const maxOffset = 50 * unitPixels; // ±50 واحد واقعی
     const dx = px - cx;
     const dy = py - cy;
     const distance = Math.sqrt(dx * dx + dy * dy);
