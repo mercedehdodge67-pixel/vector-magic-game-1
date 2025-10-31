@@ -9,50 +9,63 @@
       font-family: "Vazir", sans-serif;
       direction: rtl;
       text-align: center;
+      background-color: #f3f3f3;
       margin: 0;
       padding: 0;
-      background-color: #f8f9fa;
     }
 
-    h1 {
-      color: #1a237e;
-      margin-top: 20px;
+    #header {
+      background-color: #1565c0;
+      color: white;
+      padding: 10px;
+      font-size: 20px;
+      font-weight: bold;
     }
 
-    #container {
+    #mobile-note {
+      text-align: center;
+      color: #b30000;
+      font-size: 15px;
+      font-weight: bold;
+      margin: 10px auto;
+      width: 90%;
+      line-height: 1.6;
+    }
+
+    #gameContainer {
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       margin-top: 10px;
     }
 
     canvas {
       border: 2px solid #000;
+      background-color: #fff;
       display: block;
-      margin: 10px auto;
-      background-color: #ffffff;
+      margin: 0 auto;
     }
 
     #controls {
-      margin-top: 10px;
+      margin-top: 15px;
       background: #e3f2fd;
+      border-radius: 10px;
       padding: 10px;
-      border-radius: 8px;
       width: 280px;
-      text-align: center;
     }
 
-    input {
+    #controls input {
       width: 60px;
       text-align: center;
       font-size: 16px;
       margin: 5px;
-      border: 1px solid #1976d2;
+      border: 1px solid #1565c0;
       border-radius: 5px;
     }
 
-    button {
-      background-color: #1976d2;
+    #controls button {
+      background-color: #1565c0;
       color: white;
       border: none;
       padding: 8px 16px;
@@ -61,29 +74,27 @@
       cursor: pointer;
     }
 
-    button:hover {
+    #controls button:hover {
       background-color: #0d47a1;
     }
 
-    #mobile-note {
-      text-align: center;
-      color: #b30000;
-      font-size: 15px;
-      font-weight: bold;
-      margin: 10px;
+    footer {
+      margin-top: 20px;
+      font-size: 13px;
+      color: #555;
     }
   </style>
 </head>
 
 <body>
-  <h1>بازی تعاملی ضرب عدد در بردار</h1>
+  <div id="header">بازی آموزشی ضرب عدد در بردار</div>
 
-  <!-- پیام مخصوص موبایل -->
   <div id="mobile-note">
-    کاربر گرامی، اگر مشغول انجام این بازی با گوشی موبایل هستید، از مربع‌های قرمز رنگ برای وارد کردن علامت منفی عدد استفاده کنید.
+    کاربر گرامی، اگر مشغول انجام این بازی با گوشی موبایل هستید،  
+    از مربع‌های قرمز رنگ برای وارد کردن علامت منفی عدد استفاده کنید.
   </div>
 
-  <div id="container">
+  <div id="gameContainer">
     <canvas id="vectorCanvas"></canvas>
 
     <div id="controls">
@@ -93,6 +104,8 @@
       <button onclick="updateVector()">رسم بردار</button>
     </div>
   </div>
+
+  <footer>طراحی شده با هدف آموزش ریاضی به شیوه تعاملی 🎯</footer>
 
   <script src="script.js"></script>
   <script>
