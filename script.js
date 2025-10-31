@@ -1,87 +1,162 @@
 const canvas = document.getElementById("vectorCanvas");
 const ctx = canvas.getContext("2d");
 
-// اندازه canvas (می‌توانید طبق نیاز تغییر بدید)
+// تنظیم اندازه‌ی مربعی canvas
 function resizeCanvas() {
-    canvas.width = Math.max(600, window.innerWidth * 0.9);
-    canvas.height = Math.max(400, window.innerHeight * 0.5);
+    const maxWidth = window.innerWidth * 0.9;
+    const maxHeight = window.innerHeight * 0.6;
+    const size = Math.round(Math.min(maxWidth, maxHeight));
+    canvas.width = size;
+    canvas.height = size;
 }
 resizeCanvas();
 window.addEventListener('resize', () => {
     resizeCanvas();
-    drawAxesOnly(); // بعد از تغییر اندازه، محورها را تازه کن
+    drawAxesOnly(); 
 });
 
-let cachedAxesImage = null; // تصویر محورها برای سرعت و حفظ ثبات
+let cachedAxesImage = null;
 
-// رسم فقط محورها/شبکه و ذخیره تصویر آنها
-function drawAxesOnly(unitPixels = 40) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const cx = Math.round(canvas.width / 2);
-    const cy = Math.round(canvas.height / 2);
-
-    // شبکه: فاصله خطوط برابر با unitPixels و مرکز روی تقاطع
-    ctx.strokeStyle = "rgba(180, 200, 255, 0.35)";
-    ctx.lineWidth = 1;
-
-    // محاسبه شروع خطوط طوری که cx,cy روی تقاطع باشد
-    // خطوط عمودی
-    for (let x = cx % unitPixels; x < canvas.width; x += unitPixels) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-    }
-    // خطوط افقی
-    for (let y = cy % unitPixels; y < canvas.height; y += unitPixels) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-    }
-
-    // محورهای اصلی (خط میانی)
-    ctx.strokeStyle = "#1e3a8a";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, 0);
-    ctx.lineTo(cx, canvas.height);
-    ctx.moveTo(0, cy);
-    ctx.lineTo(canvas.width, cy);
-    ctx.stroke();
-
-    // ذخیره‌ی تصویر محورها برای استفاده در انیمیشن‌ها
-    cachedAxesImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
-}
-
-// محاسبه مقیاس (پیکسل در هر واحد) طوری که بزرگ‌ترین طول در محدوده بماند
-function calculateAutoScale(x, y, k) {
-    const absVals = [
-        Math.abs(x),
-        Math.abs(y),
-        Math.abs(x * k),
-        Math.abs(y * k)
+// -------------------- محاسبه مقیاس --------------------
+function calculateUnitForGrid(x = 0, y = 0, k = 1) {
+    const candidates = [
+        Math.abs(x), Math.abs(y),
+        Math.abs(x * k), Math.abs(y * k)
     ];
-    const maxUnits = Math.max(...absVals, 1); // اگر همه صفر بودند، از 1 استفاده کن
-    const margin = 0.85; // درصد استفاده از نصف کوچک‌ترین بعد بوم
-    const maxCanvasHalf = Math.min(canvas.width, canvas.height) / 2;
-    let unitPixels = (maxCanvasHalf * margin) / maxUnits;
+    const maxAbs = Math.max(...candidates, 1);
 
-    // محدودیت‌ها برای خوانایی
+    const maxCanvasHalf = Math.min(canvas.width, canvas.height) / 2;
+    const margin = 0.9;
+
+    // مقیاس پایه بر اساس اندازه بردارها
+    let unitPixels = (maxCanvasHalf * margin) / maxAbs;
+
+    // محدودیت خوانایی
     const MIN_PIXELS = 8;
     const MAX_PIXELS = 120;
     unitPixels = Math.max(MIN_PIXELS, Math.min(MAX_PIXELS, unitPixels));
 
-    // Round to integer so خطوط شبکه دقیقاً در مختصات صحیح بیفتند
-    unitPixels = Math.round(unitPixels);
+    // اگر برای جا دادن بردار نیاز به بیش از ±50 واحد باشد، محدود کن
+    const shownUnits = (maxCanvasHalf * margin) / unitPixels;
+    if (shownUnits > 50) {
+        unitPixels = (maxCanvasHalf * margin) / 50;
+    }
 
-    // اگر unitPixels خیلی کوچک شد، باز هم راند می‌کنیم؛ این باعث می‌شود تقاطع‌ها دقیق باشند
-    return unitPixels;
+    return Math.round(unitPixels);
 }
 
-// رسم نوک فلش متناسب با مقیاس
-function drawArrowHead(x, y, angle, color, unitPixels) {
-    // اندازه نوک متناسب با اندازه واحد
+// -------------------- رسم شبکه و محورها --------------------
+function drawAxesOnly(unitPixels) {
+    if (!unitPixels) unitPixels = calculateUnitForGrid();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const cx = Math.round(canvas.width / 2);
+    const cy = Math.round(canvas.height / 2);
+
+    const maxUnitsX = Math.floor((canvas.width / 2) / unitPixels);
+    const maxUnitsY = Math.floor((canvas.height / 2) / unitPixels);
+    const halfUnits = Math.min(50, Math.max(maxUnitsX, maxUnitsY));
+
+    ctx.strokeStyle = "rgba(180, 200, 255, 0.35)";
+    ctx.lineWidth = 1;
+
+    for (let u = -halfUnits; u <= halfUnits; u++) {
+        const x = cx + u * unitPixels;
+        if (x >= 0 && x <= canvas.width) {
+            ctx.beginPath();
+            ctx.moveTo(Math.round(x) + 0.5, 0);
+            ctx.lineTo(Math.round(x) + 0.5, canvas.height);
+            ctx.stroke();
+        }
+
+        const y = cy - u * unitPixels;
+        if (y >= 0 && y <= canvas.height) {
+            ctx.beginPath();
+            ctx.moveTo(0, Math.round(y) + 0.5);
+            ctx.lineTo(canvas.width, Math.round(y) + 0.5);
+            ctx.stroke();
+        }
+    }
+
+    // محورهای اصلی
+    ctx.strokeStyle = "#1e3a8a";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx + 0.5, 0);
+    ctx.lineTo(cx + 0.5, canvas.height);
+    ctx.moveTo(0, cy + 0.5);
+    ctx.lineTo(canvas.width, cy + 0.5);
+    ctx.stroke();
+
+    cachedAxesImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+// -------------------- محدود کردن نوک بردار --------------------
+function clampToGrid(px, py, cx, cy, unitPixels) {
+    const maxOffset = 50 * unitPixels;
+    const dx = px - cx;
+    const dy = py - cy;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance <= maxOffset) {
+        return { x: px, y: py, clipped: false };
+    } else {
+        const scale = maxOffset / distance;
+        return {
+            x: cx + dx * scale,
+            y: cy + dy * scale,
+            clipped: true
+        };
+    }
+}
+
+// -------------------- انیمیشن رسم بردار --------------------
+function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, unitPixels, onComplete, showArrowBeyond) {
+    const startImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let frameIndex = 0;
+    const totalFrames = 50;
+
+    function step() {
+        frameIndex++;
+        const t = easeOutCubic(frameIndex / totalFrames);
+        const x = cx + (xEnd - cx) * t;
+        const y = cy + (yEnd - cy) * t;
+
+        ctx.putImageData(startImage, 0, 0);
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+
+        drawArrowHead(x, y, Math.atan2(y - cy, x - cx), color, unitPixels, lineWidth);
+
+        if (frameIndex < totalFrames) {
+            requestAnimationFrame(step);
+        } else {
+            ctx.putImageData(startImage, 0, 0);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(xEnd, yEnd);
+            ctx.stroke();
+            drawArrowHead(xEnd, yEnd, Math.atan2(yEnd - cy, xEnd - cx), color, unitPixels, lineWidth);
+
+            if (showArrowBeyond) {
+                drawBoundaryIndicator(xEnd, yEnd);
+            }
+
+            if (onComplete) onComplete();
+        }
+    }
+
+    requestAnimationFrame(step);
+}
+
+// -------------------- نوک فلش --------------------
+function drawArrowHead(x, y, angle, color, unitPixels, thickness) {
     const size = Math.max(6, Math.round(unitPixels * 0.25));
     ctx.fillStyle = color;
     ctx.beginPath();
@@ -92,98 +167,70 @@ function drawArrowHead(x, y, angle, color, unitPixels) {
     ctx.fill();
 }
 
-// انیمیشن تدریجی؛ نکته مهم: ما تصویر محورها + بردارهای قبلی را در startImage ذخیره می‌کنیم
-function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, unitPixels, onComplete) {
-    const startImage = ctx.getImageData(0, 0, canvas.width, canvas.height); // تصویر فعلی (محورها + بردارهای قبل)
-    let frameIndex = 0;
-    const totalFrames = 50; // حدود 0.8s - 1s
+// -------------------- دایره هشدار مرزی --------------------
+function drawBoundaryIndicator(x, y) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(100,100,100,0.6)";
+    ctx.lineWidth = 3;
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.stroke();
 
-    function step() {
-        frameIndex++;
-        const t = easeOutCubic(frameIndex / totalFrames); // انیمیشن نرم‌تر
-        const x = cx + (xEnd - cx) * t;
-        const y = cy + (yEnd - cy) * t;
+    ctx.beginPath();
+    ctx.moveTo(x - 4, y);
+    ctx.lineTo(x + 4, y);
+    ctx.moveTo(x, y - 4);
+    ctx.lineTo(x, y + 4);
+    ctx.stroke();
 
-        // بازگردانی تصویر قبل (محورها + بردارهای قبلی)
-        ctx.putImageData(startImage, 0, 0);
-
-        // رسم بردار فعلی تا موقعیت x,y
-        ctx.strokeStyle = color;
-        ctx.lineWidth = lineWidth;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(x, y);
-        ctx.stroke();
-
-        // نوک فلش
-        drawArrowHead(x, y, Math.atan2(y - cy, x - cx), color, unitPixels);
-
-        if (frameIndex < totalFrames) {
-            requestAnimationFrame(step);
-        } else {
-            // در پایان، بردار کامل را ثابت روی بوم رسم کن
-            ctx.putImageData(startImage, 0, 0);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = lineWidth;
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.lineTo(xEnd, yEnd);
-            ctx.stroke();
-            drawArrowHead(xEnd, yEnd, Math.atan2(yEnd - cy, xEnd - cx), color, unitPixels);
-            if (onComplete) onComplete();
-        }
-    }
-
-    requestAnimationFrame(step);
+    ctx.restore();
 }
 
-// منحنی ease برای انیمیشن (نرم و طبیعی)
+// -------------------- انیمیشن نرم --------------------
 function easeOutCubic(t) {
     return 1 - Math.pow(1 - t, 3);
 }
 
-// اصلی: محاسبه مکان دقیق نقاط شبکه و رسم بردارها
+// -------------------- تابع اصلی --------------------
 function drawVector() {
-    // خواندن ورودی‌ها
     const x = Number.parseFloat(document.getElementById("x").value) || 0;
     const y = Number.parseFloat(document.getElementById("y").value) || 0;
     const k = Number.parseFloat(document.getElementById("k").value) || 1;
 
-    // مرکز بوم (این مرکز روی یک تقاطع شبکه خواهد بود)
     const cx = Math.round(canvas.width / 2);
     const cy = Math.round(canvas.height / 2);
 
-    // محاسبه واحد پیکسلی: هر واحد مختصات معادل unitPixels پیکسل است
-    const unitPixels = calculateAutoScale(x, y, k);
-
-    // ابتدا محورها/شبکه را با همان فاصله unitPixels رسم کن و ذخیره کن
+    const unitPixels = calculateUnitForGrid(x, y, k);
     drawAxesOnly(unitPixels);
 
-    // تبدیل مختصات بردار (x,y) به پیکسل (دقت: cx + x * unitPixels)
     const x1 = cx + Math.round(x * unitPixels);
-    const y1 = cy - Math.round(y * unitPixels); // معکوس محور y برای بوم
-
+    const y1 = cy - Math.round(y * unitPixels);
     const x2 = cx + Math.round(x * k * unitPixels);
     const y2 = cy - Math.round(y * k * unitPixels);
 
-    // رسم بردار اصلی با انیمیشن و نگه داشتن آن
-    animateVector(cx, cy, x1, y1, "#10b981", Math.max(2, Math.round(unitPixels * 0.08)), unitPixels, () => {
-        // پس از اتمام، بردار ضرب‌شده را نیز با کمی تاخیر رسم کن
+    const end1 = clampToGrid(x1, y1, cx, cy, unitPixels);
+    const end2 = clampToGrid(x2, y2, cx, cy, unitPixels);
+
+    animateVector(cx, cy, end1.x, end1.y, "#10b981", Math.max(2, Math.round(unitPixels * 0.08)), unitPixels, () => {
         setTimeout(() => {
-            // توجه: هنگام شروع انیمیشن بعدی، animateVector تصویر فعلی (که شامل بردار سبز کامل است) را گرفته و روی آن انیمیت می‌کند — بنابراین بردار سبز باقی می‌ماند
-            animateVector(cx, cy, x2, y2, "#ef4444", Math.max(2, Math.round(unitPixels * 0.1)), unitPixels);
+            animateVector(
+                cx, cy,
+                end2.x, end2.y,
+                "#ef4444",
+                Math.max(2, Math.round(unitPixels * 0.1)),
+                unitPixels,
+                null,
+                end2.clipped
+            );
         }, 180);
     });
 
-    // نمایش نتایج عددی (مختصات بردار ضرب‌شده)
     document.getElementById("result").textContent =
         `بردار ${k}A = (${(x * k).toFixed(2)}, ${(y * k).toFixed(2)})`;
 }
 
-// رسم اولیه‌ی محورها با unit پیش‌فرض
-drawAxesOnly(40);
-
-// متصل کردن دکمه
+// -------------------- اجرا --------------------
+drawAxesOnly(calculateUnitForGrid());
 document.querySelector("button").addEventListener("click", (e) => {
     e.preventDefault();
     drawVector();
