@@ -1,7 +1,6 @@
 const canvas = document.getElementById("vectorCanvas");
 const ctx = canvas.getContext("2d");
 
-// تنظیم اندازه‌ی مربعی canvas
 function resizeCanvas() {
     const maxWidth = window.innerWidth * 0.9;
     const maxHeight = window.innerHeight * 0.6;
@@ -17,58 +16,35 @@ window.addEventListener('resize', () => {
 
 let cachedAxesImage = null;
 
-// -------------------- محاسبه مقیاس (اصلاح‌شده) --------------------
+// -------------------- محاسبه مقیاس --------------------
 function calculateUnitForGrid(x = 0, y = 0, k = 1) {
-    // بزرگ‌ترین مختصات (هر دو بردار: اصلی و ضرب‌شده)
-    const candidates = [
-        Math.abs(x), Math.abs(y),
-        Math.abs(x * k), Math.abs(y * k)
-    ];
-    const maxAbsNeeded = Math.max(...candidates, 1);
+    const candidates = [Math.abs(x), Math.abs(y), Math.abs(x * k), Math.abs(y * k)];
+    const maxAbs = Math.max(...candidates, 1);
 
-    // نیمهٔ قابل استفادهٔ بوم (بر حسب پیکسل) — margin برای فاصله از لبه
-    const halfCanvasUsable = Math.floor((Math.min(canvas.width, canvas.height) / 2) * 0.9);
+    const halfCanvas = Math.min(canvas.width, canvas.height) / 2;
+    const margin = 0.9; // فاصله از لبه
+    const halfCanvasUsable = halfCanvas * margin;
 
-    // حداقل/حداکثر پیکسل برای هر واحد (خوانایی)
-    const MIN_PIXELS = 6;
-    const MAX_PIXELS = 200;
+    // هر نیم‌صفحه حداکثر 50 واحد را پوشش می‌دهد → unitPixels برای 50
+    const unitForMax = halfCanvasUsable / 50;
 
-    // حالت 1: اگر maxAbsNeeded خیلی کوچک است، می‌خواهیم واحد بزرگ باشد تا تصویر خواناتر باشد.
-    // اما واحد را طوری انتخاب می‌کنیم که حتماً maxAbsNeeded * unitPixels <= halfCanvasUsable
-    let unitPixels = Math.floor(halfCanvasUsable / maxAbsNeeded);
+    // اما اگر بردار کوچک‌تر است، بزرگ‌تر نمایش بده تا واضح‌تر شود
+    const unitForVector = halfCanvasUsable / maxAbs;
 
-    // اگر unitPixels به زیر حداقل رفت، آن را به MIN_PIXELS محدود کن (ممکن است در ادامه بخواهیم نشان‌دهی را محدود کنیم)
-    if (unitPixels < MIN_PIXELS) unitPixels = MIN_PIXELS;
+    // از بین این دو، واحد پیکسلی واقعی را انتخاب کن (اما بیشتر از 50 واحد در نیمه نرود)
+    const unitPixels = Math.max(unitForMax, unitForVector);
 
-    // اگر unitPixels خیلی بزرگ شد، آن را محدود کن
-    if (unitPixels > MAX_PIXELS) unitPixels = MAX_PIXELS;
-
-    // حالا بررسی می‌کنیم که با unitPixels فعلی، نیمهٔ بوم چند واحد نشان می‌دهد
-    let shownUnitsPerHalf = Math.floor(halfCanvasUsable / unitPixels);
-
-    // اگر نشان‌دهی بیش از 50 واحد در نیمهٔ بوم می‌شود (یعنی کل محور > 100 واحد)، باید unitPixels را بزرگتر کنیم
-    if (shownUnitsPerHalf > 50) {
-        unitPixels = Math.floor(halfCanvasUsable / 50);
-        // دوباره محدودیت خوانایی اعمال کن
-        if (unitPixels < MIN_PIXELS) unitPixels = MIN_PIXELS;
-        if (unitPixels > MAX_PIXELS) unitPixels = MAX_PIXELS;
-        shownUnitsPerHalf = Math.floor(halfCanvasUsable / unitPixels);
-    }
-
-    // نتیجه: unitPixels طوری انتخاب شده که
-    // - حداکثرِ لازم برای جا دادن بردارها را برآورده کند
-    // - و هر نیمهٔ بوم حداکثر 50 واحد نمایش دهد (یعنی کل محور ±50)
-    return Math.round(unitPixels);
+    return unitPixels;
 }
 
-// -------------------- رسم شبکه و محورها --------------------
+// -------------------- رسم شبکه --------------------
 function drawAxesOnly(unitPixels) {
     if (!unitPixels) unitPixels = calculateUnitForGrid();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const cx = Math.round(canvas.width / 2);
-    const cy = Math.round(canvas.height / 2);
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
 
-    const halfUnits = 50; // هر محور از -50 تا +50 (هر نیمه 50 واحد)
+    const halfUnits = 50;
 
     ctx.strokeStyle = "rgba(180, 200, 255, 0.35)";
     ctx.lineWidth = 1;
@@ -77,16 +53,16 @@ function drawAxesOnly(unitPixels) {
         const x = cx + u * unitPixels;
         if (x >= 0 && x <= canvas.width) {
             ctx.beginPath();
-            ctx.moveTo(Math.round(x) + 0.5, 0);
-            ctx.lineTo(Math.round(x) + 0.5, canvas.height);
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
             ctx.stroke();
         }
 
         const y = cy - u * unitPixels;
         if (y >= 0 && y <= canvas.height) {
             ctx.beginPath();
-            ctx.moveTo(0, Math.round(y) + 0.5);
-            ctx.lineTo(canvas.width, Math.round(y) + 0.5);
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
             ctx.stroke();
         }
     }
@@ -95,10 +71,10 @@ function drawAxesOnly(unitPixels) {
     ctx.strokeStyle = "#1e3a8a";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(cx + 0.5, 0);
-    ctx.lineTo(cx + 0.5, canvas.height);
-    ctx.moveTo(0, cy + 0.5);
-    ctx.lineTo(canvas.width, cy + 0.5);
+    ctx.moveTo(cx, 0);
+    ctx.lineTo(cx, canvas.height);
+    ctx.moveTo(0, cy);
+    ctx.lineTo(canvas.width, cy);
     ctx.stroke();
 
     cachedAxesImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -106,7 +82,7 @@ function drawAxesOnly(unitPixels) {
 
 // -------------------- محدود کردن نوک بردار --------------------
 function clampToGrid(px, py, cx, cy, unitPixels) {
-    const maxOffset = 50 * unitPixels; // ±50 واحد واقعی
+    const maxOffset = 50 * unitPixels; // ±50 واحد
     const dx = px - cx;
     const dy = py - cy;
     const distance = Math.sqrt(dx * dx + dy * dy);
@@ -137,7 +113,6 @@ function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, unitPixels, onCompl
         const y = cy + (yEnd - cy) * t;
 
         ctx.putImageData(startImage, 0, 0);
-
         ctx.strokeStyle = color;
         ctx.lineWidth = lineWidth;
         ctx.beginPath();
@@ -159,10 +134,7 @@ function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, unitPixels, onCompl
             ctx.stroke();
             drawArrowHead(xEnd, yEnd, Math.atan2(yEnd - cy, xEnd - cx), color, unitPixels, lineWidth);
 
-            if (showArrowBeyond) {
-                drawBoundaryArrow(xEnd, yEnd, clipAngle);
-            }
-
+            if (showArrowBeyond) drawBoundaryArrow(xEnd, yEnd, clipAngle);
             if (onComplete) onComplete();
         }
     }
@@ -172,7 +144,7 @@ function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, unitPixels, onCompl
 
 // -------------------- نوک فلش --------------------
 function drawArrowHead(x, y, angle, color, unitPixels, thickness) {
-    const size = Math.max(6, Math.round(unitPixels * 0.25));
+    const size = Math.max(6, unitPixels * 0.25);
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.moveTo(x, y);
@@ -205,20 +177,20 @@ function easeOutCubic(t) {
 
 // -------------------- تابع اصلی --------------------
 function drawVector() {
-    const x = Number.parseFloat(document.getElementById("x").value) || 0;
-    const y = Number.parseFloat(document.getElementById("y").value) || 0;
-    const k = Number.parseFloat(document.getElementById("k").value) || 1;
+    const x = parseFloat(document.getElementById("x").value) || 0;
+    const y = parseFloat(document.getElementById("y").value) || 0;
+    const k = parseFloat(document.getElementById("k").value) || 1;
 
-    const cx = Math.round(canvas.width / 2);
-    const cy = Math.round(canvas.height / 2);
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
 
     const unitPixels = calculateUnitForGrid(x, y, k);
     drawAxesOnly(unitPixels);
 
-    const x1 = cx + Math.round(x * unitPixels);
-    const y1 = cy - Math.round(y * unitPixels);
-    const x2 = cx + Math.round(x * k * unitPixels);
-    const y2 = cy - Math.round(y * k * unitPixels);
+    const x1 = cx + x * unitPixels;
+    const y1 = cy - y * unitPixels;
+    const x2 = cx + x * k * unitPixels;
+    const y2 = cy - y * k * unitPixels;
 
     const end1 = clampToGrid(x1, y1, cx, cy, unitPixels);
     const end2 = clampToGrid(x2, y2, cx, cy, unitPixels);
@@ -227,7 +199,7 @@ function drawVector() {
         cx, cy,
         end1.x, end1.y,
         "#10b981",
-        Math.max(2, Math.round(unitPixels * 0.08)),
+        Math.max(2, unitPixels * 0.08),
         unitPixels,
         () => {
             setTimeout(() => {
@@ -235,7 +207,7 @@ function drawVector() {
                     cx, cy,
                     end2.x, end2.y,
                     "#ef4444",
-                    Math.max(2, Math.round(unitPixels * 0.1)),
+                    Math.max(2, unitPixels * 0.1),
                     unitPixels,
                     null,
                     end2.clipped,
