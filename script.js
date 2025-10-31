@@ -11,7 +11,7 @@ function drawAxes() {
     const unit = 40;
 
     // خطوط شبکه
-    ctx.strokeStyle = "rgba(180, 200, 255, 0.5)";
+    ctx.strokeStyle = "rgba(180, 200, 255, 0.3)";
     for (let x = 0; x < canvas.width; x += unit) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -36,6 +36,45 @@ function drawAxes() {
     ctx.stroke();
 }
 
+// تابع محاسبه مقیاس مناسب برای بردارها
+function calculateAutoScale(x, y, k) {
+    const maxVector = Math.max(
+        Math.abs(x),
+        Math.abs(y),
+        Math.abs(x * k),
+        Math.abs(y * k)
+    );
+    const margin = 0.8; // برای اینکه در لبه‌ها نباشد
+    const maxCanvas = Math.min(canvas.width, canvas.height) / 2;
+    const scale = (maxCanvas * margin) / (maxVector || 1);
+    return Math.min(scale, 80); // حداکثر بزرگنمایی
+}
+
+function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, callback) {
+    let progress = 0;
+    const duration = 60; // تعداد فریم‌ها (تقریباً 1 ثانیه)
+    function step() {
+        progress++;
+        const t = progress / duration;
+        const x = cx + (xEnd - cx) * t;
+        const y = cy + (yEnd - cy) * t;
+        drawAxes();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        drawArrowHead(x, y, Math.atan2(y - cy, x - cx), color);
+        if (progress < duration) {
+            requestAnimationFrame(step);
+        } else if (callback) {
+            callback();
+        }
+    }
+    step();
+}
+
 function drawVector() {
     drawAxes();
     const x = parseFloat(document.getElementById("x").value);
@@ -44,32 +83,21 @@ function drawVector() {
 
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
-    const scale = 40;
+
+    const scale = calculateAutoScale(x, y, k);
 
     const x1 = cx + x * scale;
     const y1 = cy - y * scale;
     const x2 = cx + (x * k) * scale;
     const y2 = cy - (y * k) * scale;
 
-    // بردار اصلی
-    ctx.strokeStyle = "#10b981";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(x1, y1);
-    ctx.stroke();
-
-    // فلش بردار اصلی
-    drawArrowHead(x1, y1, Math.atan2(y1 - cy, x1 - cx), "#10b981");
-
-    // بردار ضرب‌شده
-    ctx.strokeStyle = "#ef4444";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-    drawArrowHead(x2, y2, Math.atan2(y2 - cy, x2 - cx), "#ef4444");
+    // ابتدا بردار اصلی را با انیمیشن رسم کن
+    animateVector(cx, cy, x1, y1, "#10b981", 3, () => {
+        // سپس بردار ضرب‌شده را با تأخیر کوتاه رسم کن
+        setTimeout(() => {
+            animateVector(cx, cy, x2, y2, "#ef4444", 4);
+        }, 400);
+    });
 
     // نمایش نتیجه
     document.getElementById("result").textContent =
