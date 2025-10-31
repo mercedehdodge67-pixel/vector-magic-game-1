@@ -18,11 +18,23 @@
         <input id="k" type="number" value="2">
         <button onclick="drawVector()">محاسبه و نمایش</button>
     </div>
-    <div id="result"></div>
+   <div id="result"></div>
     <canvas id="vectorCanvas"></canvas>
-    
-    
+   
 
     <script src="script.js"></script>
+
+    <script>
+    // --- تغییر خودکار نوع ورودی‌ها در موبایل ---
+    const isMobile = /Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent);
+    if (isMobile) {
+        ["x", "y", "k"].forEach(id => {
+            const input = document.getElementById(id);
+            input.type = "text"; // کیبورد کامل باز می‌شود
+            input.inputMode = "decimal"; // نقطه و منفی مجاز می‌شود
+            input.placeholder = "مثلاً -2";
+        });
+    }
+    </script>
 </body>
 </html>
