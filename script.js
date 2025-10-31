@@ -25,21 +25,21 @@ function calculateUnitForGrid(x = 0, y = 0, k = 1) {
     ];
     const maxAbs = Math.max(...candidates, 1);
 
-    const maxCanvasHalf = Math.min(canvas.width, canvas.height) / 2;
-    const margin = 0.9;
+    const halfCanvas = Math.min(canvas.width, canvas.height) / 2;
+    const margin = 0.9; // کمی فاصله از لبه‌ها برای دید بهتر
 
-    // هر نیم‌صفحه باید 50 واحد را نمایش دهد → کل محور ±50
-    let unitPixels = (maxCanvasHalf * margin) / maxAbs;
+    // نیمه‌ی بوم باید کل محدوده‌ی maxAbs را پوشش دهد (±maxAbs)
+    let unitPixels = (halfCanvas * margin) / maxAbs;
 
     // محدودیت خوانایی
     const MIN_PIXELS = 8;
     const MAX_PIXELS = 120;
     unitPixels = Math.max(MIN_PIXELS, Math.min(MAX_PIXELS, unitPixels));
 
-    // اگر نیاز به بیش از ±50 باشد، حداکثر را محدود کن
-    const shownUnits = (maxCanvasHalf * margin) / unitPixels;
+    // اگر لازم است بیش از ±50 واحد نمایش داده شود، محدودش کن
+    const shownUnits = (halfCanvas * margin) / unitPixels;
     if (shownUnits > 50) {
-        unitPixels = (maxCanvasHalf * margin) / 50;
+        unitPixels = (halfCanvas * margin) / 50;
     }
 
     return Math.round(unitPixels);
@@ -52,7 +52,7 @@ function drawAxesOnly(unitPixels) {
     const cx = Math.round(canvas.width / 2);
     const cy = Math.round(canvas.height / 2);
 
-    const halfUnits = 50;
+    const halfUnits = 50; // حالا هر محور از −50 تا +50
 
     ctx.strokeStyle = "rgba(180, 200, 255, 0.35)";
     ctx.lineWidth = 1;
@@ -90,7 +90,7 @@ function drawAxesOnly(unitPixels) {
 
 // -------------------- محدود کردن نوک بردار --------------------
 function clampToGrid(px, py, cx, cy, unitPixels) {
-    const maxOffset = 50 * unitPixels; // ±50 واحد واقعی
+    const maxOffset = 50 * unitPixels; // ±50 واحد
     const dx = px - cx;
     const dy = py - cy;
     const distance = Math.sqrt(dx * dx + dy * dy);
