@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بازی آموزشی ضرب عدد در بردار</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .neg-btn {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 3px 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .neg-btn:hover {
+            background-color: #dc2626;
+        }
+        .mobile-hint {
+            background: rgba(255, 255, 255, 0.9);
+            color: #b91c1c;
+            font-weight: bold;
+            font-size: 1em;
+            text-align: center;
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 8px 14px;
+            margin-bottom: 12px;
+            max-width: 95%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        @media (max-width: 600px) {
+            input {
+                width: 60px;
+                font-size: 1.1em;
+            }
+            .neg-btn {
+                padding: 5px 10px;
+                font-size: 1em;
+            }
+            .mobile-hint {
+                font-size: 0.95em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">بازی آموزشی ضرب عدد در بردار</h1>
+     <p class="hint">مختصات بردار را وارد کن، ضریب را تعیین کن و ببین بردار چگونه تغییر می‌کند</p>
+
+    <!-- پیام راهنمای مخصوص کاربران موبایل -->
+    <div class="mobile-hint">
+        کاربر گرامی، اگر مشغول انجام این بازی با گوشی موبایل هستید، از مربع‌های قرمز رنگ برای وارد کردن علامت منفی عدد استفاده کنید.
+    </div>
+
+    <div class="container">
+        <div class="input-group">
+            <label>مولفه X:</label>
+            <input id="x" type="text" value="2" inputmode="decimal">
+            <button class="neg-btn" onclick="toggleSign('x')">±</button>
+        </div>
+        <div class="input-group">
+            <label>مولفه Y:</label>
+            <input id="y" type="text" value="3" inputmode="decimal">
+            <button class="neg-btn" onclick="toggleSign('y')">±</button>
+        </div>
+        <div class="input-group">
+            <label>عدد ضریب:</label>
+            <input id="k" type="text" value="2" inputmode="decimal">
+            <button class="neg-btn" onclick="toggleSign('k')">±</button>
+        </div>
+        <button onclick="drawVector()">محاسبه و نمایش</button>
+    </div>
+   <div id="result"></div>
+    <canvas id="vectorCanvas"></canvas>
+ 
+      <script src="script.js"></script>
+
+    <script>
+    // دکمه ± برای تغییر علامت عدد
+    function toggleSign(id) {
+        const input = document.getElementById(id);
+        let val = input.value.trim();
+        if (val.startsWith('-')) {
+            val = val.substring(1);
+        } else if (val !== '') {
+            val = '-' + val;
+        } else {
+            val = '-';
+        }
+        input.value = val;
+    }
+    </script>
+</body>
+</html>
