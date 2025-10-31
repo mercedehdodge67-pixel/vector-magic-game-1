@@ -4,6 +4,7 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth * 0.9;
 canvas.height = window.innerHeight * 0.5;
 
+// رسم محور‌ها
 function drawAxes() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const cx = canvas.width / 2;
@@ -36,7 +37,7 @@ function drawAxes() {
     ctx.stroke();
 }
 
-// تابع محاسبه مقیاس مناسب برای بردارها
+// تابع محاسبه مقیاس خودکار
 function calculateAutoScale(x, y, k) {
     const maxVector = Math.max(
         Math.abs(x),
@@ -44,21 +45,25 @@ function calculateAutoScale(x, y, k) {
         Math.abs(x * k),
         Math.abs(y * k)
     );
-    const margin = 0.8; // برای اینکه در لبه‌ها نباشد
+    const margin = 0.85;
     const maxCanvas = Math.min(canvas.width, canvas.height) / 2;
     const scale = (maxCanvas * margin) / (maxVector || 1);
-    return Math.min(scale, 80); // حداکثر بزرگنمایی
+    return Math.min(scale, 80);
 }
 
-function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, callback) {
+// تابع انیمیشن تدریجی
+function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, onComplete) {
     let progress = 0;
-    const duration = 60; // تعداد فریم‌ها (تقریباً 1 ثانیه)
-    function step() {
+    const totalFrames = 60; // حدود 1 ثانیه
+
+    function frame() {
         progress++;
-        const t = progress / duration;
+        const t = progress / totalFrames;
         const x = cx + (xEnd - cx) * t;
         const y = cy + (yEnd - cy) * t;
+
         drawAxes();
+        // در هر فریم فقط خطوط را مجدداً رسم کن
         ctx.strokeStyle = color;
         ctx.lineWidth = lineWidth;
         ctx.beginPath();
@@ -66,17 +71,18 @@ function animateVector(cx, cy, xEnd, yEnd, color, lineWidth, callback) {
         ctx.lineTo(x, y);
         ctx.stroke();
         drawArrowHead(x, y, Math.atan2(y - cy, x - cx), color);
-        if (progress < duration) {
-            requestAnimationFrame(step);
-        } else if (callback) {
-            callback();
+
+        if (progress < totalFrames) {
+            requestAnimationFrame(frame);
+        } else if (onComplete) {
+            onComplete();
         }
     }
-    step();
+
+    frame();
 }
 
 function drawVector() {
-    drawAxes();
     const x = parseFloat(document.getElementById("x").value);
     const y = parseFloat(document.getElementById("y").value);
     const k = parseFloat(document.getElementById("k").value);
@@ -85,18 +91,19 @@ function drawVector() {
     const cy = canvas.height / 2;
 
     const scale = calculateAutoScale(x, y, k);
-
     const x1 = cx + x * scale;
     const y1 = cy - y * scale;
     const x2 = cx + (x * k) * scale;
     const y2 = cy - (y * k) * scale;
 
-    // ابتدا بردار اصلی را با انیمیشن رسم کن
+    drawAxes(); // رسم اولیه محور
+
+    // بردار اصلی سبز
     animateVector(cx, cy, x1, y1, "#10b981", 3, () => {
-        // سپس بردار ضرب‌شده را با تأخیر کوتاه رسم کن
+        // پس از پایان، بردار قرمز را رسم کن
         setTimeout(() => {
             animateVector(cx, cy, x2, y2, "#ef4444", 4);
-        }, 400);
+        }, 300);
     });
 
     // نمایش نتیجه
@@ -104,6 +111,7 @@ function drawVector() {
         `بردار ${k}A = (${(x * k).toFixed(1)}, ${(y * k).toFixed(1)})`;
 }
 
+// رسم نوک فلش
 function drawArrowHead(x, y, angle, color) {
     ctx.fillStyle = color;
     ctx.beginPath();
